@@ -44,7 +44,7 @@ mysql -h 127.0.0.1 -p 3306 -uroot -p
 常见软件的默认端口号
 
 ```
-MySQL 3706
+MySQL 3306
 redis 6379
 mongodb 27017
 django 8000
