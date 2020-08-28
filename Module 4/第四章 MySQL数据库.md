@@ -184,6 +184,10 @@ sql(Structured Query Language)结构化查询语句：用于存取数据、查�
 清空当前表的所有数据：delet from t1;
 ```
 
+## 表操作
+
+### 存储引擎
+
 
 
 
