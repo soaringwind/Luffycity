@@ -186,7 +186,135 @@ sql(Structured Query Language)结构化查询语句：用于存取数据、查�
 
 ## 表操作
 
-### 存储引擎
+### 存储引擎（表类型）
+
+针对不同的文件，应该选择不同的文件格式进行保存，根据不同的格式选择不同的处理机制。例如，如果想要速度，可以把使用内存存储。存储引擎，就是如何存储数据，如何为存储的数据建立索引和如何更新、查询数据等技术的实现方法。
+
+查看所有支持的储存引擎：show engines;
+
+查看当前的默认存储引擎：show variables like "default_storage_engine"
+
+![image-20200830133357987](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830133357987.png)
+
+
+
+MySQL主要的存储引擎：innodb、mysiam、memory、blackhole
+
+#### Innodb
+
+MySQL5.5版本之后的默认存储引擎，support transactions, row-level locking, and foreign keys，支持事务，支持表锁，支持行锁。在并发时，能保证数据的一致性
+
+存储时两个文件，frm文件和ibd文件，frm存放表结构，ibd存放表数据。
+
+#### Myisam
+
+MySQL5.5版本之前的默认存储引擎，查询速度快，支持表锁，适合于只读的场景。
+
+存储时三个文件，frm表结构，MYD表数据，MYI索引。因此查找速快。
+
+#### Memory
+
+内存引擎，数据全部存放在内存中，一旦断电数据全部丢失。
+
+存储时一个文件，frm表结构。
+
+#### Blackhole
+
+无论存任何内容，都会立刻消失。
+
+存储时一个文件，frm表结构。
+
+![img](https://img2018.cnblogs.com/blog/827651/201809/827651-20180928181850055-806373159.png)
+
+MySQL的架构设计：
+
+```
+MySQL架构总共四层，在上图中以虚线作为划分。
+　　首先，最上层的服务并不是MySQL独有的，大多数给予网络的客户端/服务器的工具或者服务都有类似的架构。比如：连接处理、授权认证、安全等。
+　　第二层的架构包括大多数的MySQL的核心服务。包括：查询解析、分析、优化、缓存以及所有的内置函数（例如：日期、时间、数学和加密函数）。同时，所有的跨存储引擎的功能都在这一层实现：存储过程、触发器、视图等。
+
+　　第三层包含了存储引擎。存储引擎负责MySQL中数据的存储和提取。服务器通过API和存储引擎进行通信。这些接口屏蔽了不同存储引擎之间的差异，使得这些差异对上层的查询过程透明化。存储引擎API包含十几个底层函数，用于执行“开始一个事务”等操作。但存储引擎一般不会去解析SQL（InnoDB会解析外键定义，因为其本身没有实现该功能），不同存储引擎之间也不会相互通信，而只是简单的响应上层的服务器请求。
+
+　　第四层包含了文件系统，所有的表结构和数据以及用户操作的日志最终还是以文件的形式存储在硬盘上。
+```
+
+
+
+### 创建表的完整语法
+
+```mysql
+create table 表名(
+	字段名1 类型(宽度) (约束条件), 
+	字段名2 类型(宽度) (约束条件)
+)
+create table t1(id int name char(16)) engine=myisam;
+alter table t1 engine=innodb;
+```
+
+注意：
+
+1. 同一张表中的字段名不能重复。
+2. 宽度和约束条件是可以不写的，而字段名和类型则是必须的。
+3. 约束条件可写多个。
+4. 最后一行不能有逗号。
+
+表的增删改查：
+
+```mysql
+修改表名：alter table table_test rename table_test1;
+
+增加字段：alter table table_test add 字段名 数据类型 (约束条件);
+插入到首行：alter table table_test add 字段名 数据类型(约束条件) first;
+插入到某行之后：alter table tale_test add 字段名 数据类型(约束条件) after 字段名;
+
+删除字段：alter table table_test drop 字段名;
+
+修改字段数据类型：alter table 表名 modify 字段名 新数据类型 (约束条件);
+修改字段名：alter table 表名 change 旧字段名 新字段名 旧数据类型 (约束条件);
+修改字段约束条件：alter table 表名 change 旧字段名 新字段名 新数据类型 (约束条件);
+```
+
+### 基本的数据类型
+
+#### 数值类型
+
+类型很多，记住，整数用int，小数float，够平时使用。
+
+![image-20200830145712618](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830145712618.png)
+
+默认的数值类型都是带有符号的，存储数据的量会少一半，因此想要无符号的，需要添加约束条件。
+
+数值类型括号内的数字代表限制的字节数量，但基本不需要指定。
+
+#### 日期类型
+
+使用now()可以直接添加当前时间。
+
+![image-20200830150759578](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830150759578.png)
+
+![image-20200830151333464](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830151333464.png)
+
+
+
+#### 字符串类型
+
+![image-20200830151606859](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830151606859.png)
+
+char：浪费空间，但是存取简单，按固定字符存取。
+
+varchar：节省空间，存取麻烦，不知道取几位，存的时候需要制作报头
+
+以前基本用char，现在用varchar也挺多。
+
+
+
+#### enum和set类型
+
+![image-20200830151855371](C:\Users\soaringwind\AppData\Roaming\Typora\typora-user-images\image-20200830151855371.png)
+
+enum：只能选一个出来。
+
+set：可以选多个，但不能超出可选范围，并且会自动去重。
 
 
 
