@@ -184,6 +184,24 @@ sql(Structured Query Language)结构化查询语句：用于存取数据、查�
 清空当前表的所有数据：delet from t1;
 ```
 
+## 库操作
+
+### 增删改查
+
+```
+create database db1;
+
+drop database db1;
+
+alter database db1 charset='utf8';
+
+show create database db1;
+
+show databases;
+```
+
+
+
 ## 表操作
 
 ### 存储引擎（表类型）
@@ -315,6 +333,187 @@ varchar：节省空间，存取麻烦，不知道取几位，存的时候需要�
 enum：只能选一个出来。
 
 set：可以选多个，但不能超出可选范围，并且会自动去重。
+
+### 约束条件
+
+unsigned：无符号
+
+```mysql
+use db1;
+select database();
+
+create table t1 (
+id int unsigned,  # 插入有符号的，会自动变成0
+name char(8)
+);
+```
+
+
+
+not null：不为空
+
+```mysql
+create table t1(
+id int unsigned, 
+name char(8) not null);
+```
+
+
+
+default：默认值
+
+```mysql
+create table t1(
+id int unsigned, 
+name char(8) not null, 
+sex enum('male', 'female') default 'male');
+```
+
+
+
+unique：唯一
+
+```mysql
+create table t1(
+id int unsigned unique, 
+name char(8) not null, 
+sex enum('male', 'female') default 'male');
+
+# 联合唯一
+create table t1(
+ip char(15), 
+server char(10), 
+port int, 
+unique(ip, port));  # 两个都相同时，报错。
+```
+
+
+
+auto_increment：整数自增，不为空且唯一，且必须同时被key约束
+
+```mysql
+create table t1(
+id int primary key auto_increment, 
+name char(8) not null, 
+sex enum('male', 'female') default 'male');
+```
+
+
+
+primary key：主键，唯一且不为空
+
+```mysql
+create table t1(
+id int primary key, 
+name char(8) not null, 
+sex enum('male', 'female') default 'male');
+
+# 联合主键和联合唯一类似
+```
+
+
+
+foreign key：外键，创建时需要先创建外键的表，且外键的关联字段必须唯一。
+
+```mysql
+create table t1(
+id int primary key auto_increment, 
+name char(8) not null, 
+sex enum('male', 'female') default 'male', 
+hobby set('basketball', 'football', 'tennis'), 
+position char(16), 
+foreign key(position) references department (name));  # 这里department的name必须约束唯一
+
+# 级联删除和级联更新
+
+foreign key (position) references department(name) on update cascade on delete cascade;
+```
+
+
+
+### 表与表关系
+
+分析两张表中的数据之间的关系。
+
+一对多：将多的那个表设置成外键。
+
+一对一：后出现的表设置成外键。
+
+多对多：产生第三张表，把两个有着关联关系的字段作为第三张表的外键。
+
+
+
+## 记录的增删改查
+
+insert：增，insert into 表名 (字段1, 字段2....) values (值1, 值2.....)
+
+```mysql
+insert into t1 values (1, 'alex');
+insert into t1(id, name) values(2, 'egon'), (3, 'peiqi');
+
+# 如果设置自增，则可以少写
+insert into t1(name) values('yuan')
+```
+
+
+
+delete：删，delete from 表名 where 条件;
+
+```mysql
+delete from t1 where id=1;
+```
+
+
+
+update：改，update 表名 set 字段=新的值 where 条件;
+
+```mysql
+update t1 set name='sdhfisdf' where id=2;
+```
+
+
+
+select：查，select * from 表，select 字段1, 字段2... from 表，select distinct 字段1, 字段2... from 表（去重），select name, salary*12 as annual_salary from 表（运算）
+
+```mysql
+select * from t1;
+select id, name from t1;
+select distinct id, name, position from t1; 
+select name, salary*12 as annual_salary from t1;
+```
+
+
+
+作业
+
+```mysql
+create database db1;
+use db1;
+
+# 创建班级表
+create table class_table (
+cid int unique primary key auto_increment,
+caption char(8) unique
+);
+
+# 添加内容
+insert into class_table(caption) values('三年二班'), ('一年三班'), ('三年一班');
+
+# 创建学生表
+create table student_table(
+sid int unique primary key auto_increment, 
+sname char(8), 
+gender enum('女', '男') default '男', 
+class_id int,
+foreign key (class_id) references class_table(cid)
+);
+
+# 添加内容
+insert into student_table(sname, gender, class_id) values(
+'钢蛋', '女', 1), ('铁锤', '女', 1), ('山炮', '男', 2);
+```
+
+
 
 
 
