@@ -511,6 +511,36 @@ foreign key (class_id) references class_table(cid)
 # 添加内容
 insert into student_table(sname, gender, class_id) values(
 '钢蛋', '女', 1), ('铁锤', '女', 1), ('山炮', '男', 2);
+
+# 创建老师表
+create table teacher_table(
+tid int unique primary key auto_increment, 
+tname char(8));
+
+# 添加内容
+insert into teacher_table(tname) values('波多'), ('苍空'), ('饭岛');
+
+# 创建课程表
+create table course_table(
+cid int unique primary key auto_increment, 
+cname varchar(8), 
+teacher_id int,
+foreign key (teacher_id) references teacher_table(tid));
+
+# 添加内容
+insert into course_table(cname, teacher_id) values('生物', 1), ('体育', 1), ('物理', 2);
+
+# 创建成绩表
+create table score_table (
+sid int unique auto_increment, 
+student_id int, 
+course_id int, 
+score int, 
+foreign key (student_id) references student_table(sid), 
+foreign key (course_id) references course_table(cid));
+
+# 添加内容
+insert into score_table(student_id, course_id, score) values(1, 1, 60), (1, 2, 59), (2, 2, 100);
 ```
 
 
