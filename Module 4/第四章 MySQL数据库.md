@@ -38,7 +38,7 @@ MySQL客户端：mysql.exe
 启动：使用cmd来启动，先切换目录到MySQL目录下，输入mysqld，保留窗口，作为服务端，之后，输入mysql，启动客户端。
 
 ```mysql
-mysql -h 127.0.0.1 -p 3306 -uroot -p
+mysql -h 127.0.0.1 -P 3306 -uroot -p
 ```
 
 常见软件的默认端口号
@@ -415,6 +415,8 @@ sex enum('male', 'female') default 'male');
 
 foreign key：外键，创建时需要先创建外键的表，且外键的关联字段必须唯一。
 
+注意：外键和主键的数据类型必须相同。
+
 ```mysql
 create table t1(
 id int primary key auto_increment, 
@@ -543,7 +545,230 @@ foreign key (course_id) references course_table(cid));
 insert into score_table(student_id, course_id, score) values(1, 1, 60), (1, 2, 59), (2, 2, 100);
 ```
 
+### 单表查询
 
+单表查询语法
+
+```
+select 字段1, 字段2... from 表名
+                      where  条件
+                      group by  分组
+                      having  筛选
+                      order by  排序
+                      limit  限制条数
+```
+
+关键字的执行顺序
+
+```
+1. 找到表：from
+
+2. 拿着where指定的约束条件，去文件/表中取出一条条记录
+
+3. 将取出的一条条记录进行分组group by，如果没有group by，则整体作为一组
+
+4. 将分组的结果进行having筛选
+
+5. 执行select（去重）
+
+6. 将结果按条件排序order by
+
+7. 限制结果的显示条数
+```
+
+#### 简单查询
+
+练习
+
+```mysql
+select concat('<名字:', emp_name, '>     ', '<薪资:'salary, '>') from employee;
+
+select distinct post from employee;
+
+select emp_name, salary*12 as annual_year from employee;
+```
+
+#### where约束
+
+```
+1. 比较运算符：<, >, =, >=, <=, <>, !=
+
+2. between A and B：在A和B之间的值。
+	经过实验，A、B为字符串也可以，但是字符串貌似顾头不顾尾。
+
+3. in (A, B, C)：值是A或B或C
+
+4. like 'n%'：模糊查询
+    %（通配符）：表示任意多字符
+    _（通配符）：表示任意一个字符
+
+5. 逻辑运算符：与或非，and, or, not
+
+6. 判断null时，必须使用成员运算，is或not is
+```
+
+练习
+
+```mysql
+select emp_name, age from employee where post='teacher';
+
+select emp_name, age from employee where post='teacher' and age>30;
+
+select emp_name, age, salary from employee where post='teacher' and salary between 9000 and 10000;
+
+select * from employee where post_comment is not null;
+
+select emp_name, age, salary from employee where post='teacher' and salary in (10000, 9000, 30000);
+
+select emp_name, age, salary from employee where post='teacher' and salary not in (10000, 9000, 30000);
+
+select emp_name, salary*12 as annual_salary from employee where post='teacher' and emp_name like 'jin%';
+```
+
+#### group by分组
+
+单独使用group by关键字分组，会将group by后面的字段，将这个字段中的每一个不同的项保留下来，并且把值是这一项的归为一组，但是显示的时候，只显示第一个出现的信息。
+
+```mysql
+select post from employee group by post;
+```
+
+#### 聚合函数
+
+把很多行的同一个字段进行统计，最终得到结果。聚合函数聚合的是组的内容，若是没有分组，则默认为一组。
+
+```
+count(字段)：统计这个字段有多少项。一般统计主键的个数，如果为空，则不统计。
+
+sum(字段)：统计这个字段对应数值的和。
+
+avg(字段)：统计这个字段对应数值的平均值。
+
+min(字段)：统计这个字段中的最小值。
+
+max(字段)：统计这个字段中的最大值。
+```
+
+练习
+
+```mysql
+select group_concat(emp_name), post from employee group by post;
+
+select post, count(id) from employee group by post; 
+
+select sex, count(id) from employee group by sex;
+
+select post, avg(salary) from employee group by post;
+
+select post, max(salary) from employee group by post;
+
+select post, min(salary) from employee group by post; 
+
+select sex, avg(salary) from employee group by sex;
+```
+
+#### having过滤
+
+用法基本和where一样，但是having和where不一样的地方在于！！！
+
+```
+执行优先级从高到低：where > group by> having
+1. where发生在分组group之前，因而where中可以有任意字段，但是绝对不能使用聚合函数。
+
+2. having发生在分组group之后，因此having可以使用分组的字段，可以使用聚合函数。
+```
+
+练习
+
+```mysql
+select post, group_concat(emp_name), count(id) from employee group by post having count(id) < 2;
+
+select post, avg(salary) from employee group by post having avg(salary) > 10000;
+
+select post, avg(salary) from employee group by post having avg(salary) between 10000 and 20000;
+```
+
+#### order by查询排序
+
+单列排序
+
+```mysql
+select * from employee order by salary;
+select * from employee order by salary asc;
+select * from employee order by salary desc;
+```
+
+多次排序：先按照规则1排序，如果有相同的，则按照规则2排序。
+
+```mysql
+select * from employee order by age, salary desc;
+```
+
+练习
+
+```mysql
+select * from employee order by age, hire_date desc;
+
+select post, avg(salary) from employee group by post having avg(salary) > 10000 order by avg(salary);
+
+select post, avg(salary) from employee group by post having avg(salary) > 10000 order by avg(salary) desc;
+```
+
+#### limit限制查询的记录数
+
+分页功能，取前几个。
+
+越到后面越慢的原因：limit虽然限制，但是每次都是将所有值取出，再去找索引，因此越到后面数据量越多，找的越慢。
+
+```
+limit n == limit 0, n
+limit m, n ==从m+1往后取n个
+limit n offset == limit m, n
+最后一次取，取尽，不用考虑报错。
+```
+
+练习
+
+```mysql
+select * from employee limit 0,5;
+
+select * from employee limit 5,5; 
+
+select * from employee limit 10,5;
+```
+
+#### 使用正则表达式查询
+
+regexp关键字表示正则表达式。
+
+练习
+
+```mysql
+select * from employee where emp_name regexp '^jin.*[np]$'
+```
+
+## PyMySQL模块
+
+```python
+import pymysql
+
+conn = pymysql.connect(('127.0.0.1', 'root', "", 'db1'))
+
+cur = conn.cursor()  # 创建一个游标对象，类似于文件
+
+sql = 'show databases;'
+
+cur.execute(sql)  # 执行sql
+
+conn.commit()  # 提交到数据库执行
+
+# 如何拿返回结果
+res = cur.fetchone()  # 拿一条返回结果
+res = cur.fetchall()  # 拿所有的返回结果
+res = cur.fetchmany(5)  # 拿五条返回结果
+
+conn.close()
+```
 
 
 
