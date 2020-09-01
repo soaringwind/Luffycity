@@ -718,7 +718,7 @@ select post, avg(salary) from employee group by post having avg(salary) > 10000 
 
 分页功能，取前几个。
 
-越到后面越慢的原因：limit虽然限制，但是每次都是将所有值取出，再去找索引，因此越到后面数据量越多，找的越慢。
+越到后面越慢的原因：limit虽然限制个数，但是每次都是将所有值取出，再去找索引，因此越到后面数据量越多，找的越慢。
 
 ```
 limit n == limit 0, n
@@ -746,6 +746,181 @@ regexp关键字表示正则表达式。
 ```mysql
 select * from employee where emp_name regexp '^jin.*[np]$'
 ```
+
+### 多表查询
+
+通常用于两张有关系的表（如一对多）中，当查询的内容涉及到两张表的时候，需要使用多表查询。
+
+#### 连表查询（将两张表连在一起查）
+
+##### 交叉连接
+
+不适用任何匹配条件，生成笛卡儿积。
+
+```mysql
+# 笛卡儿积，单纯的把两张表一起查出来，总共数量n*m
+select * from emp, department
+```
+
+
+
+##### 内连接
+
+只连接匹配的行。
+
+```mysql
+select * from employee inner join department;   # 效果和笛卡儿积一样
+
+# 没匹配上的不显示
+select * from employee inner join department on employee.dep_id = department.id;
+# 上面sql等于
+select * from employee inner join department where employee.dep_id = department.id;
+```
+
+
+
+##### 外连接
+
+```mysql
+# 左连接：left join，优先显示左表的全部记录，跟右表对不上的，使用null来填充。
+select * from employee left join department as dep on employee.dep_id = dep.id;
+
+# 右连接：right join，优先显示右表的全部记录，跟左表对不上的，使用null来填充。
+select * from employee right join department as dep on employee.dep_id = dep.id;
+
+# 全外连接，在内连接的基础上增加上左、右两边没有的结果，MySQL不提供全连接，两个行数必须相等。
+select * from employee left join department as dep on employee.dep_id = dep.id union select * from employee right join department as dep on employee.dep_id = dep.id;
+```
+
+练习
+
+```mysql
+# 以内连接的方式查询employee和department表，并且employee表中的age字段值必须大于25,即找出年龄大于25岁的员工以及员工所在的部门
+select department.name from employee inner join department on employee.dep_id = department.id where employee.age>25;
+
+select department.name from employee left join department on employee.dep_id = department.id where age > 25;
+
+# 以内连接的方式查询employee和department表，并且以age字段的升序方式显示
+select * from employee inner join department on employee.dep_id = department.id order by age;
+
+select * from employee left join department on employee.dep_id = department.id order by age;
+```
+
+
+
+#### 子查询
+
+```
+1. 子查询是将一个查询语句嵌套在另一个查询语句中。
+2. 内层查询语句的结果，可以作为外层查询语句提供查询条件。
+3. 子查询中可以包含：in，not in，any，all，exists和not exists等关键字。
+4. 还可以包含比较运算符：=，！=，>，<等
+```
+
+##### 带in关键字的子查询
+
+```mysql
+# 查询平均年龄在25岁以上的部门名
+select name from department where id in (select dep_id from employee group by dep_id having avg(age)>25);
+
+# 查看技术部员工姓名
+select name from employee where dep_id = (select id from department where name='技术');
+
+# 查看不足1人的部门名(子查询得到的是有人的部门id)
+select name from department where id not in (select dep_id from employee group by dep_id);
+```
+
+##### 带比较运算符的子查询
+
+```mysql
+# 比较运算符：=，!=，>，<，>=，<=，<>
+# 查询大于所有人平均年龄的员工名与年龄
+select name, age from employee where age>(select avg(age) from employee);
+
+# 查询大于部门内平均年龄的员工名、年龄
+select t1.name, t1.age from employee as t1 inner join (select dep_id, avg(age) as avg_age from employee group by dep_id) as t2 on t1.dep_id=t2.dep_id where t1.age>t2.avg_age;
+```
+
+##### 带EXISTS关键字的子查询
+
+```
+EXISTS关键字表示存在，在使用EXISTS关键字时，内层查询语句不返回查询的记录，而是返回一个真假值，True或False，当返回True时，外层查询语句执行，当返回值False时，外层查询语句不进行查询。
+```
+
+```mysql
+select * from employee where exists (select id from department where id=200);
+select * from employee where exists (select id from department where id=204);
+```
+
+练习
+
+```mysql
+# 1. 分类找到最新日期
+select post, max(hire_date) from employee group by post;
+
+# 2. 内连接表，通过最新日期查找到名字
+select t1.name, t1.post, t1.hire_date from employee as t1 inner join (select post, max(hire_date) as max_hire_date from employee group by post) as t2 on t1.post=t2.post where t1.hire_date=t2.max_hire_date;  # 不会错行去找
+```
+
+作业
+
+```mysql
+# 1、查询男生、女生的人数；
+select gender, count(sid) from student_table group by gender;  # count主键数量
+
+# 2、查询姓“张”的学生名单；
+select sname from student_table where sname like "钢%";
+
+# 3、课程平均分从高到低显示
+select course_id, avg(score) from score_table group by course_id order by avg(score);
+
+# 4、查询有课程成绩小于60分的同学的学号、姓名；
+select t1.sid, t1.sname from student_table as t1 where t1.sid in (select student_id from score_table where score<60);
+
+select t1.sid, t1.sname from student_table as t1 inner join (select student_id, score from score_table) as t2 on t1.sid=t2.student_id where t2.score<60;
+
+# 5、查询至少有一门课与学号为1的同学所学课程相同的同学的学号和姓名；
+select course_id from score_table where student_id=1;
+select student_id from score_table where course_id in (select course_id from score_table where student_id=1) and student_id!=1;
+select sid, sname from student_table where sid = (select student_id from score_table where course_id in (select course_id from score_table where student_id=1) and student_id!=1);
+
+# 6、查询出只选修了一门课程的全部学生的学号和姓名；
+select student_id from score_table group by student_id having count(student_id)=1;
+select sid, sname from student_table where sid = (select student_id from score_table group by student_id having count(student_id)=1);
+
+# 7、查询各科成绩最高和最低的分：以如下形式显示：课程ID，最高分，最低分；
+select course_id as '课程ID', max(score) as '最高分', min(score) as '最低分' from score_table group by course_id;
+
+# 8、查询课程编号“2”的成绩比课程编号“1”课程低的所有同学的学号、姓名；
+
+
+# 9、查询“生物”课程比“物理”课程成绩高的所有学生的学号；
+
+
+# 10、查询平均成绩大于60分的同学的学号和平均成绩;
+select student_id, avg(score) from score_table group by student_id having avg(score)>60;
+
+# 11、查询所有同学的学号、姓名、选课数、总成绩；
+select sid, sname, count(t2.course_id) as '选课数', sum(t2.score) as '总成绩' from student_table as t1 inner join (select student_id, course_id, score from score_table) as t2 on t1.sid = t2.student_id group by t2.student_id;
+
+# 12、查询姓“李”的老师的个数；
+select count(tid) from teacher_table where tname like '波%';
+
+# 13、查询没学过“张磊老师”课的同学的学号、姓名；
+
+
+# 14、查询学过“1”并且也学过编号“2”课程的同学的学号、姓名；
+select student_id from score_table where course_id=1;
+select student_id from score_table where course_id=2;
+select sid, sname from student_table where sid = (select student_id from score_table where course_id=1) in (select student_id from score_table where course_id=2);
+
+# 15、查询学过“李平老师”所教的所有课的同学的学号、姓名；
+
+```
+
+
+
+
 
 ## PyMySQL模块
 
