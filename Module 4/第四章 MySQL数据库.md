@@ -1392,32 +1392,39 @@ select t1.sid, t1.sname from student as t1 inner join score as t2 on t1.sid=t2.s
 select course_id as '课程ID', max(num) as '最高分', min(num) as '最低分' from score group by course_id;
 
 # 8、查询课程编号“2”的成绩比课程编号“1”课程低的所有同学的学号、姓名；
-	# 1. 根据学生分组，找到课程编号2成绩大于课程编号1成绩
-	# 2. 将结果作为子查询去，student找
+	# 1. 先查找编号为1，再查找编号为2，将两张表连接。
+	# 2. 然后通过条件查询，大于关系。
+	# 3. 拿到学号，再进行子查询。
 
 # 子查询
-select sid, sname from student where sid in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2);
-
-select sid, sname from student where sid in (select sid from score from (select num from score where student_id in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2) and course_id=1) > (select num from score where student_id in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2) and course_id=2));
+select sid, sname from student where sid in (select t1.student_id from (select student_id, num as cou1_num from score where course_id=1) as t1 inner join (select student_id, num as cou2_num from score where course_id=2) as t2 on t1.student_id=t2.student_id where cou1_num>cou2_num); 
 
 # 连表查询
 
 
 # 9、查询“生物”课程比“物理”课程成绩高的所有学生的学号；
 # 这题跟上面一样，先获取编号，然后直接做就完事
+select sid, sname from student where sid in (select t1.student_id from (select student_id, num as cou1_num from score where course_id=(select cid from course where cname='生物')) as t1 inner join (select student_id, num as cou2_num from score where course_id=(select cid from course where cname='物理')) as t2 on t1.student_id=t2.student_id where cou1_num>cou2_num); 
 
-select sid, sname from student where sid in (select student_id from score where student_id in (select student_id from score where course_id=(select cid from course where cname='生物')) and course_id=(select cid from course where cname='物理'));
 
 # 10、查询平均成绩大于60分的同学的学号和平均成绩;
-select student_id, avg(score) from score_table group by student_id having avg(score)>60;
+select student_id, avg(score) from score group by student_id having avg(score)>60;
 
 # 11、查询所有同学的学号、姓名、选课数、总成绩；
-select sid, sname, count(t2.course_id) as '选课数', sum(t2.score) as '总成绩' from student_table as t1 inner join (select student_id, course_id, score from score_table) as t2 on t1.sid = t2.student_id group by t2.student_id;
+select sid, sname, count(t2.course_id) as '选课数', sum(t2.score) as '总成绩' from student as t1 inner join (select student_id, course_id, score from score) as t2 on t1.sid = t2.student_id group by t2.student_id;
 
 # 12、查询姓“李”的老师的个数；
-select count(tid) from teacher_table where tname like '波%';
+select count(tid) from teacher where tname like '李%';
 
 # 13、查询没学过“张磊老师”课的同学的学号、姓名；
+# 1. 获取“张磊老师”的tid
+# 2. 找到教的课编号
+# 3. 通过课程编号，找到学生编号
+
+# 子查询
+select sid, sname from student where sid not in (select student_id from score where course_id in (select cid from course where teacher_id=(select tid from teacher where tname like '张磊%')));
+
+# 连表查询
 
 
 # 14、查询学过“1”并且也学过编号“2”课程的同学的学号、姓名；
@@ -1426,6 +1433,7 @@ select student_id from score_table where course_id=2;
 select sid, sname from student_table where sid = (select student_id from score_table where course_id=1) in (select student_id from score_table where course_id=2);
 
 # 15、查询学过“李平老师”所教的所有课的同学的学号、姓名；
+select sid, sname from student where sid in (select student_id from score where course_id in (select cid from course where teacher_id=(select tid from teacher where tname like '李平%')));
 
 ```
 
