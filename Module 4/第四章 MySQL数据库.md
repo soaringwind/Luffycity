@@ -14,16 +14,23 @@
 几个重要概念：
 
 	1. 数据库：文件夹。
- 	2. 表：文件，新建的时候需要输入表头及格式。
- 	3. 记录：一行行的数据。
- 	4. 表头：表格的第一行字段。
- 	5. 字段：变量名。
+	
+	2. 表：文件，新建的时候需要输入表头及格式。
+	
+	3. 记录：一行行的数据。
+	
+	4. 表头：表格的第一行字段。
+	
+	5. 字段：变量名。
+
 
 ## MySQL安装与基本管理
 
 任何基于网络通信的应用程序底层用的都是socket（C/S架构）。
 
 MySQL不单单支持自己的客户端app，还支持其他编程语言，但需要采用统一的语言来控制（即sql语句）。
+
+
 
 ### MySQL安装
 
@@ -54,6 +61,8 @@ tomcat 8080
 
 MySQL第一次以管理员运行，不需要输入密码。
 
+
+
 ### 基础的sql语句
 
 ```
@@ -71,6 +80,8 @@ MySQL第一次以管理员运行，不需要输入密码。
 
 6. 只输入mysql也能连接，但只是游客模式，很多功能访问不到。
 ```
+
+
 
 ### 环境变量的配置及系统服务制作
 
@@ -118,6 +129,8 @@ default-character-set=utf8
 [mysql]
 default-character-set=utf8
 ```
+
+
 
 ## 基础sql语句
 
@@ -184,6 +197,8 @@ sql(Structured Query Language)结构化查询语句：用于存取数据、查�
 清空当前表的所有数据：delet from t1;
 ```
 
+
+
 ## 库操作
 
 ### 增删改查
@@ -237,7 +252,7 @@ MySQL5.5版本之前的默认存储引擎，查询速度快，支持表锁，适
 
 2. innodb寻址要映射到块，再到行，而myisam记录的直接是文件的offset，定位很快。
 
-3. innodb要维护MVCC（multi-version concurrency control）多版本并发控制，也就是innodb支持事务。
+3. innodb要维护MVCC（multi-version concurrency control）多版本并发控制，也就是innodb支持事务，需要处理锁。
 ```
 
 
@@ -294,8 +309,8 @@ alter table t1 engine=innodb;
 修改表名：alter table table_test rename table_test1;
 
 增加字段：alter table table_test add 字段名 数据类型 (约束条件);
-插入到首行：alter table table_test add 字段名 数据类型(约束条件) first;
-插入到某行之后：alter table tale_test add 字段名 数据类型(约束条件) after 字段名;
+插入到首列：alter table table_test add 字段名 数据类型(约束条件) first;
+插入到某列之后：alter table tale_test add 字段名 数据类型(约束条件) after 字段名;
 
 删除字段：alter table table_test drop 字段名;
 
@@ -303,6 +318,8 @@ alter table t1 engine=innodb;
 修改字段名：alter table 表名 change 旧字段名 新字段名 旧数据类型 (约束条件);
 修改字段约束条件：alter table 表名 change 旧字段名 新字段名 新数据类型 (约束条件);
 ```
+
+
 
 ### 基本的数据类型
 
@@ -345,6 +362,8 @@ varchar：节省空间，存取麻烦，不知道取几位，存的时候需要�
 enum：只能选一个出来。
 
 set：可以选多个，但不能超出可选范围，并且会自动去重。
+
+
 
 ### 约束条件
 
@@ -758,6 +777,8 @@ regexp关键字表示正则表达式。
 ```mysql
 select * from employee where emp_name regexp '^jin.*[np]$'
 ```
+
+
 
 ### 多表查询
 
@@ -1236,6 +1257,8 @@ or连接的条件：在满足单列索引的基础上，对or相关的所有列�
 
 好处：辅助索引不包含整行记录的所有信息，故其大小要远小于聚集索引，同时查询的条件又都包含（也就是通过辅助查询就可以查到所有需要的信息），因此可以减少大量的IO操作。
 
+
+
 ### 执行计划
 
 explain+sql语句：可以在执行sql语句之前就知道sql的执行情况。
@@ -1320,40 +1343,70 @@ cur.excute(sql, (username, password))  # 让sql自己拼接
 
 
 
-作业
+## 作业
 
 ```mysql
 # 1、查询男生、女生的人数；
-select gender, count(sid) from student_table group by gender;  # count主键数量
+select gender, count(sid) from student group by gender;  # count主键数量
 
 # 2、查询姓“张”的学生名单；
-select sname from student_table where sname like "钢%";
+select sname from student where sname like "张%";
 
 # 3、课程平均分从高到低显示
-select course_id, avg(score) from score_table group by course_id order by avg(score);
+desc：降序
+asc：升序
+select course_id, avg(num) from score group by course_id order by avg(num) desc;
 
 # 4、查询有课程成绩小于60分的同学的学号、姓名；
-select t1.sid, t1.sname from student_table as t1 where t1.sid in (select student_id from score_table where score<60);
 
-select t1.sid, t1.sname from student_table as t1 inner join (select student_id, score from score_table) as t2 on t1.sid=t2.student_id where t2.score<60;
+内连接：select t1.sid, t1.sname, t2.course_id, t2.num from student as t1 inner join (select student_id, course_id, num from score) as t2 on t1.sid=t2.student_id where t2.num<60;
+
+子查询：select t1.sid, t1.sname from student as t1 where t1.sid in (select student_id from score where num<60);
 
 # 5、查询至少有一门课与学号为1的同学所学课程相同的同学的学号和姓名；
-select course_id from score_table where student_id=1;
-select student_id from score_table where course_id in (select course_id from score_table where student_id=1) and student_id!=1;
-select sid, sname from student_table where sid = (select student_id from score_table where course_id in (select course_id from score_table where student_id=1) and student_id!=1);
+    # 1. 找到学号为1的同学学的课
+    # 2. 找到课程id与1的结果相同的同学
+    # 3. 打印学号和姓名
+
+# 子查询
+select course_id from score where student_id=1;
+select student_id from score where course_id in (select course_id from score_table where student_id=1) and student_id!=1;
+select sid, sname from student where sid in (select student_id from score where course_id in (select course_id from score where student_id=1) and student_id!=1);
+
+# 连表查询
+select t2.course_id from student as t1 inner join score as t2 on t1.sid=t2.student_id where t1.sid=1;
+select t1.sid, t1.sname, t2.course_id, t2.num from (student as t1 inner join score as t2 on t1.sid=t2.student_id) where t2.course_id in (select course_id from score where student_id=1);
 
 # 6、查询出只选修了一门课程的全部学生的学号和姓名；
-select student_id from score_table group by student_id having count(student_id)=1;
-select sid, sname from student_table where sid = (select student_id from score_table group by student_id having count(student_id)=1);
+    # 1. 根据学生分类，统计课程次数即成绩=1，拿到学号
+    # 2. 根据学号，到学生表中查询学号和姓名
+    
+# 子查询
+select student_id from score group by student_id having count(student_id)=1;
+select sid, sname from student where sid = (select student_id from score group by student_id having count(student_id)=1);
+
+# 连表查询
+select t1.sid, t1.sname from student as t1 inner join score as t2 on t1.sid=t2.student_id group by t2.student_id having count(t2.student_id)=1; 
 
 # 7、查询各科成绩最高和最低的分：以如下形式显示：课程ID，最高分，最低分；
-select course_id as '课程ID', max(score) as '最高分', min(score) as '最低分' from score_table group by course_id;
+select course_id as '课程ID', max(num) as '最高分', min(num) as '最低分' from score group by course_id;
 
 # 8、查询课程编号“2”的成绩比课程编号“1”课程低的所有同学的学号、姓名；
+	# 1. 根据学生分组，找到课程编号2成绩大于课程编号1成绩
+	# 2. 将结果作为子查询去，student找
+
+# 子查询
+select sid, sname from student where sid in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2);
+
+select sid, sname from student where sid in (select sid from score from (select num from score where student_id in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2) and course_id=1) > (select num from score where student_id in (select student_id from score where student_id in (select student_id from score where course_id=1) and course_id=2) and course_id=2));
+
+# 连表查询
 
 
 # 9、查询“生物”课程比“物理”课程成绩高的所有学生的学号；
+# 这题跟上面一样，先获取编号，然后直接做就完事
 
+select sid, sname from student where sid in (select student_id from score where student_id in (select student_id from score where course_id=(select cid from course where cname='生物')) and course_id=(select cid from course where cname='物理'));
 
 # 10、查询平均成绩大于60分的同学的学号和平均成绩;
 select student_id, avg(score) from score_table group by student_id having avg(score)>60;
