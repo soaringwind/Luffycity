@@ -410,3 +410,40 @@ include方法：只能够将html文件的所有代码都拿来，不可以选择
 
 extend方法：在html文件中留好block块，可以用作后续的修改。
 
+注意：
+
+```
+1. 如果在模板中使用{% extends %}标签，则它必须处在第一个标签。
+
+2. 在base模板中设置越多的{% block %}越好。
+
+3. 使用{{ block.super }}可以拿到初始的值。
+
+4. 不能在一个模板中定义多个相同名字的block块。
+```
+
+### ORM
+
+ORM，它实现了数据模型与数据库的解耦，数据模型的设计不需要依赖于特定的数据库，通过简单的数据库配置可以轻松更换数据库，极大的减轻了开发人员的工作量。
+
+ORM：对象-关系-映射。
+
+![img](https://images2018.cnblogs.com/blog/877318/201804/877318-20180425153356710-1116321211.png)
+
+#### 创建表
+
+models中可以创建表，但是无法创建数据库，即数据库的创建需要MySQL来完成。
+
+固定模式，可以参考https://www.cnblogs.com/yuanchenqi/articles/8933283.html，不是全对。
+
+#### 添加表记录
+
+```
+方法一：
+	book_obj = Book(id=1, title='python', state=True, price=100, pub_date='2012-12-12', publish='人民日报')
+	book_obj.save()
+
+方法二：
+	book_obj = Book.objects.create(title='python', state=True, price=100, pub_date='2012-12-12', publish='人民日报')
+```
+
