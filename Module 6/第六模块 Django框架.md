@@ -290,3 +290,123 @@ URL配置(URLconf)就像Django 所支撑网站的目录。它的本质是URL与�
 ```
 
 注意：在django2.0中的path方法，可以自定义匹配方法，还提供了匹配格式转换器。
+
+### 视图层
+
+视图函数，负责接收web请求并返回web响应，具体的响应内容可以是一张网页，一个重定向，一个404错误，但无论视图本身包含什么逻辑，都要返回响应，约定将视图放置在项目或者应用程序目录中的名为views.py文件中。
+
+```
+request参数实际上接收的是HttpRequest对象，通常称之为request。
+视图层返回HttpResponse对象。
+```
+
+#### HttpRequest对象
+
+##### request属性
+
+```
+HttpRequest.method: 返回此次请求的方法（get/post等）
+
+HttpRequest.GET: 返回get请求的内容
+	返回QueryDict对象
+	
+HttpRequest.POST: 返回post请求的内容
+	返回QueryDict对象
+	
+HttpRequest.path: 返回字符串，路径
+```
+
+##### request常用方法
+
+```
+HttpRequest.get_full_path(): 返回路径+get请求的内容
+
+HttpRequest.is_ajax()
+```
+
+#### HttpResponse对象
+
+响应对象主要有三种形式：
+
+- HttpResponse()
+- render()
+- redirect()
+
+HttpResponse()括号内直接跟字符串作为响应体，直接简单。
+
+```
+render(request, template_name[, context])
+
+    request: 用于生成响应的请求对象，必须传入
+
+    template_name: 模板名称
+    	会先查看html文件里面是否有模板语法，如果有，则先将值传入，再将html文件传给浏览器。
+
+    context: 添加到模板上下文的一个字典，默认是空字典，可以不传入。
+    	使用locals()函数可以将变量按照变量名+变量的方式全部储存到字典中，传入给template_name。
+```
+
+### 模板层
+
+如果直接将HTML硬编码到视图层中，会导致耦合度太高，一旦需要修改，python的代码也需要相应修改。
+
+#### 模板语法之变量
+
+句点字符：遍历复杂数据结构，也可以用来引用对象的方法（无参数方法）。
+
+语法：{{var_name}}
+
+#### 模板语法之过滤器
+
+就是在大括号里面加个|。
+
+```
+{{obj|filter_name: param}}
+
+filter_name: 
+	default:'无内容'
+	length
+	filesizeformat
+	date
+	slice
+	truncatechar: 9  # 截断字符串
+	safe
+```
+
+#### 模板语法之标签
+
+标签：{% tag %}
+
+```
+for标签：
+	{% for foo in list %}
+		<p>{{ foo.name }}</p>
+	{% empty %}
+		<p>sorry, no person here</p>
+	{% endfor %}
+	
+if标签：
+	{% if num>100 %}
+		<p>哟</p>
+	{% else %}
+		<p>哎</p>
+	{% endif %}
+
+with标签：
+	{% with total=business.employees.count %}
+		{{ total }} employee {{ total|pluralize }}
+	{ % endwith %}
+```
+
+#### 自定义标签和过滤器
+
+可以自己去网站上看。
+
+两个最大的区别在于：过滤器可以用在if等语句的后面，标签不可以。
+
+#### 模板继承
+
+include方法：只能够将html文件的所有代码都拿来，不可以选择修改。
+
+extend方法：在html文件中留好block块，可以用作后续的修改。
+
