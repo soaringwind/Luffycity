@@ -447,3 +447,93 @@ models中可以创建表，但是无法创建数据库，即数据库的创建�
 	book_obj = Book.objects.create(title='python', state=True, price=100, pub_date='2012-12-12', publish='人民日报')
 ```
 
+#### 查询表记录（重点）
+
+总共十二种方法：
+
+```
+1. all()方法：返回queryset对象，调用者为Book.objects
+	book_list = Book.objects.all()  # 类似[obj1, obj2]
+	book_list支持序列，索引，for循环。
+	select * from ...
+	
+2. first(), last()方法：返回models对象，调用者为queryset
+	相当于：Book.objects.all()[0]
+	
+3. filter()方法：返回queryset对象，调用者为Book.objects
+	book_list = Book.objects.filter(title='go')
+	select * from ... where title='go';
+	
+4. exclude()方法：返回queryset对象，调用者为Book.objects
+	与filter相反。
+	book_list = Book.objects.exclude(title='go')
+	select * from where title != 'go';
+
+5. get()方法：返回一个models对象，注意这里只能查询有且只有一个的结果，否则报错。
+	book_obj = Book.objects.get(title='go')
+	
+6. orderby()方法：调用者queryset对象，返回queryset
+	book_list = Book.objects.orderby('id')  # 按照ASC排序
+	book_list = Book.objects.orderby('-id')
+	
+7. reverse()方法：调用者queryset对象，返回queryset
+
+8. count()方法：返回int值，调用者queryset对象
+	val = Book.objects.all().count()
+	
+9. exists()方法：返回布尔值，个人觉得意义不大
+	bol = Book.objects.all().exists()
+	
+10. values()方法：返回queryset，以[dic1, dic2]形式，调用者queryset对象
+	book_list = Book.objects.values('price', 'title')
+	
+11. value_list()方法：返回queryset，以[tuple1, tuple2]形式，调用者queryset对象
+	book_list = Book.objects.value_list('price', 'title')
+	
+12. distinct()方法：一般配合values和value_list使用，调用者queryset，返回queryset
+	book_list = Book.objects.values('price').distinct()
+```
+
+##### 模糊查询
+
+```
+所有的模糊查询都是双下划线方法：
+	1. 大于：Book.objects.filter(price__gt=100)
+		select * from ... where price>100
+	
+	2. 小于：Book.objects.filter(price__lt=100)
+	
+	3. 或：Book.objects.filter(price__in=[100, 120])
+	
+	4. 范围：Book.objects.filter(price__range=[100,200])
+	
+	5. 包含：Book.objects.filter(title__contains='h')
+	
+	6. 包含且不分大小写：Book.objects.filter(title_icontains='h')
+	
+	7. 开头：Book.objects.filter(title__startswith='py')
+	
+	8. 日期：Book.objects.filter(pub_date__year=2012)
+	
+```
+
+#### 删除表记录
+
+需要注意，删除操作只能在queryset上调用，防止出现Book.objects.delete()全部误删的现象。
+
+```
+两种方法：
+	1. Book.objects.all().delete()
+	
+	2. book_obj.delete()
+```
+
+注意：删除一个对象也会删除与它关联的外键对象。
+
+#### 修改表记录
+
+```
+Book.objects.filter(title='python').update(price=100)
+```
+
+update()方法对于任何结果集（QuerySet）均有效，这意味着你可以同时更新多条记录update()方法会返回一个整型数值，表示受影响的记录条数。
