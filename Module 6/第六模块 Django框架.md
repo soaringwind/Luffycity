@@ -537,3 +537,89 @@ Book.objects.filter(title='python').update(price=100)
 ```
 
 update()方法对于任何结果集（QuerySet）均有效，这意味着你可以同时更新多条记录update()方法会返回一个整型数值，表示受影响的记录条数。
+
+#### 多表操作
+
+##### 创建表
+
+主要需要注意不同对应关系，创建表结构时需要添加不同的外键，另外，外键的数据结构必须相同。
+
+一对多：多的那张表创建外键。
+
+一对一：任意一张表创建外键。
+
+多对多：创建第三张表，在第三张表中两个关联的字段创建外键。
+
+创建操作查阅即可：
+
+```python
+class Author(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=32)
+    age = models.IntegerField(4)
+    authorDetail = models.OneToOneField(to="AuthorDetail", to_field="id", on_delete="models.CASCADE")
+
+
+class AuthorDetail(models.Model):
+    id = models.AutoField(primary_key=True)
+    birthday = models.DateField()
+    telephone = models.CharField(max_length=15)
+    addr = models.CharField(max_length=32)
+
+
+class Book(models.Model):
+    id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=32)
+    publish_date = models.DateField()
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    publish = models.ForeignKey(to="Publish", to_field="id", on_delete="models.CASCADE")
+    authors = models.ManyToManyField(to="Author")
+
+
+class Publish(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=32)
+    city = models.CharField(max_length=32)
+    email = models.EmailField()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
