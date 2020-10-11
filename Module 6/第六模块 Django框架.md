@@ -583,11 +583,173 @@ class Publish(models.Model):
     email = models.EmailField()
 ```
 
+##### 添加表记录
 
+没有任何关联的就是单表，添加以及查询都是基于单表查询，因此先添加单表记录。
 
+###### 一对多
 
+```python
+pub_obj = Publish.objects.create(name='人民出版社')
+pub_obj = Publish.objects.filter(name='人民出版社').first()
+方法一：
+	book_obj = Book.objects.create(title='三国', publish_id=1)
+方法二：
+	book_obj = Book.objects.create(title='水浒', publish=pub_obj)
 
+book_obj.publish.name   # 无论用哪种方式进行添加，都可以查询到publish对象
+```
 
+需要注意，无论用哪种方式进行添加记录，在查询时，都可以通过对象加属性查询到publish的对象。
+
+###### 多对多
+
+```python
+book_obj = Book.objects.create(title='红楼梦', publish_id=1)
+book_obj.author.add(1, 2)  # 放入对象也可以，会自动查询主键值进行添加。
+```
+
+进行多对多的绑定，需要先找到manytomanyfield那个关键字，使用add属性进行传参。
+
+其他方法：all, remove, clear
+
+##### 基于对象跨表查询（子查询）
+
+跟MySQL一样，先找内部，再找外部。
+
+正向查询：从绑定关联属性的一头查询关联属性，正向按照字段。
+
+反向查询：相反，反向按照表名（小写+_set）。
+
+###### 一对多查询
+
+正向：
+
+```python
+book_obj = Book.objects.filter(title='红楼梦')[0]
+pub_obj = book_obj.publish
+```
+
+反向：
+
+```python
+pub_obj = Publish.objects.filter(id=1)
+book_list = pub_obj.book_set.all()  # 返回queryset对象
+for book_obj in book_list:
+    print(book_obj.title)
+```
+
+###### 多对多查询
+
+正向：
+
+```python
+book_obj = Book.objects.filter(id=1)
+author_list = book_obj.authors.all()  # 返回queryset对象
+for author in author_list:
+    print(author.name)
+```
+
+反向：
+
+```python
+author_obj = Author.objects.filter(name='alex')
+book_list = author_obj.book_set.all()  # 返回queryset对象
+for book_obj in book_list:
+    print(book_obj.title)
+```
+
+###### 一对一查询
+
+非常特殊，因为是一对一，因此反向不需要加set，不返回queryset对象。
+
+正向：
+
+```python
+author_obj = Author.objects.filter(name='alex')[0]
+author_detail_obj = author_obj.authorDetail
+print(author_detail_obj.telephone)
+```
+
+反向：
+
+```python
+author_detail_obj = AuthorDetail.objects.filter(id=1).first()
+author_obj = author_detail_obj.author
+print(author_obj.name)
+```
+
+##### 基于双下划线的跨表查询（连表查询）
+
+正向：按字段名。
+
+反向：按表名小写。
+
+双下划线链接模型间关联字段的名称。
+
+###### 一对多查询
+
+正向：
+
+```python
+ret = Book.objects.filter(title='三国').values('publish__name')   # 返回queryset对象[dict1, dict2]
+print(ret)
+```
+
+反向：
+
+```python
+ret = Publish.objects.filter(book__title='三国').values('name')  # 返回queryset对象
+```
+
+###### 多对多查询
+
+正向：
+
+```python
+ret = Book.objects.filter(title='三国').values('authors__name')  # 返回queryset对象
+print(ret)  # 正向使用字段，即ManyToMany那个字段
+```
+
+反向：
+
+```python
+ret = Author.objects.filter(book__title='三国').values('name')  # 返回queryset对象
+```
+
+###### 一对一查询
+
+正向：
+
+```python
+ret = Author.objects.filter(name='alex').values('authorDetail__telephone')  # 返回queryset对象
+print(ret)
+```
+
+反向：
+
+```python
+ret = AuthorDetail.objects.filter(author__name='alex').values('telephone')  # 返回queryset对象
+```
+
+###### 连续跨表
+
+无所谓正向，需要综合使用。
+
+```python
+ret = Book.objects.filter(publish__name='人民出版社').values('title', 'authors__name')
+```
+
+```python
+ret = Publish.objects.filter(name='人民出版社').values('book__title', 'book__authors__name')  # 要有联系，不能横空跨
+```
+
+```python
+# 手机号以151开头的作者出版过的所有书籍名称以及出版社名称
+ret = AuthorDetail.objects.filter(telephone__startswith('151')).values('author__book__title', 'author__book__publish__name')
+
+ret = Author.objects.filter(authorDetail__telephone__startswith('151')).values('book__title', 'book__publish__name')
+```
 
 
 
