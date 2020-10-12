@@ -751,9 +751,27 @@ ret = AuthorDetail.objects.filter(telephone__startswith('151')).values('author__
 ret = Author.objects.filter(authorDetail__telephone__startswith('151')).values('book__title', 'book__publish__name')
 ```
 
+#### 聚合与分组（aggregate&annotate）
 
+##### 聚合（aggregate）
 
+记住先分组后聚合。
 
+正向：用字段。
+
+反向：用表名小写。
+
+需要注意：聚合之后，返回的是一个字典，而不是queryset对象。
+
+聚合函数：from django.db.models import Aug, Max, Min, Count
+
+```python
+ret = Book.objects.all().aggregate(max_price=Aug('price'))
+```
+
+##### 分组（annotate）
+
+单表较为简单。
 
 
 
