@@ -773,6 +773,52 @@ ret = Book.objects.all().aggregate(max_price=Aug('price'))
 
 单表较为简单。
 
+单表查询公式：
+
+```python
+单表模型.objects.values("group by字段").annotate(聚合函数("统计字段"))
+```
+
+```python
+ret = Emp.objects.values("dep").annotate(avg_salary=Aug("salary"))
+```
+
+###### 跨表分组查询
+
+记住返回的是queryset，因此可以对返回值进行继续操作。一定是先join，再分组。
+
+正向：字段名。
+
+反向：表名小写。
+
+模板：
+
+```python
+ret = 每一个的表模型.objects.values("pk").annotate(聚合函数("关联表__统计字段"))  # 返回queryset对象
+ret.values("属性")
+```
+
+```python
+ret = 每一个后的表模型.objects.annotate(聚合函数("关联表__统计字段")).values(所有字段+聚合函数字段)
+```
+
+#### F与Q查询
+
+F查询：用来解决拿到变量值问题。类似于python中f{}功能。
+
+Q查询：用来解决或与非操作问题。
+
+先Q后键值对。
+
+```python
+from django.db.models import F, Q
+
+
+ret = Book.objects.filter(comment__num__gt=F("read__num"))
+
+ret = Book.objects.filter(title="红楼梦", price=100)
+```
+
 
 
 
